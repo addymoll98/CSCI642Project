@@ -1,0 +1,69 @@
+# Start of the code for using the new corpus bumble
+# and combining what I did for Assignment #4
+# To test on your device---
+#   Make a folder in 'C:/Users/userid/AppData/Roaming/nltk_data/corpora/bumble'
+#   inside bumble folder, make 3 folder: 'app_func', 'cust_serv', 'prod_sat'
+#   put relevent reviews as text files in those folders
+#   note as of 4/9/22- I just put one txt file in each folder to test, more will need to be added then.
+#my current output was:
+#   ['app_func', 'cust_serv', 'prod_sat']       
+#   This movie review is:  app_func
+
+
+import os, os.path
+import nltk, string, re
+from nltk import FreqDist, NaiveBayesClassifier, classify
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+from nltk.corpus.reader import CategorizedPlaintextCorpusReader
+
+bumble=CategorizedPlaintextCorpusReader('C:/Users/addym/AppData/Roaming/nltk_data/corpora/bumble',  \
+                                 '.*', \
+                                 cat_pattern=r'(.*)[/]')
+
+print(bumble.categories())
+
+documents = []
+
+for category in bumble.categories():
+	for fileid in bumble.fileids(category):
+		documents.append((bumble.words(fileid), category))
+
+all_words = [word.lower() for word in bumble.words()]
+
+stopwords_english = stopwords.words('english')
+
+all_words_clean = []
+for word in all_words:
+	if word not in stopwords_english and word not in string.punctuation:
+		all_words_clean.append(word)
+
+all_words_frequency = FreqDist(all_words_clean)
+
+most_common_words = all_words_frequency.most_common(2000)
+
+word_features = [item[0] for item in most_common_words]
+
+def document_features(document):
+	document_words = set(document)
+	features = {}
+	for word in word_features:
+		features['contains(%s)' % word] = (word in document_words)
+	return features
+
+feature_set = [(document_features(doc), category) for (doc, category) in documents]
+
+train_set = feature_set[:]
+
+classifier = NaiveBayesClassifier.train(train_set)
+
+
+# in_file = open("C:/Users/addym/Desktop/Classes/CSCI642/Assignment4/Test data file.txt")
+
+# test_review = in_file.read()
+# in_file.close()
+
+test_rev = "Nobody will answer the phone"
+test_rev_tokens = word_tokenize(test_rev)
+test_rev_set = document_features(test_rev_tokens)
+print ("This movie review is: ",classifier.classify(test_rev_set))
