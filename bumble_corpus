@@ -1,21 +1,12 @@
-# Start of the code for using the new corpus bumble
-# and combining what I did for Assignment #4
-# To test on your device---
-#   Make a folder in 'C:/Users/userid/AppData/Roaming/nltk_data/corpora/bumble'
-#   inside bumble folder, make 3 folder: 'app_func', 'cust_serv', 'prod_sat'
-#   put relevent reviews as text files in those folders
-#   note as of 4/9/22- I just put one txt file in each folder to test, more will need to be added then.
-#my current output was:
-#   ['app_func', 'cust_serv', 'prod_sat']       
-#   This movie review is:  app_func
-
-
+from math import prod
 import os, os.path
+import string
 import nltk, string, re
 from nltk import FreqDist, NaiveBayesClassifier, classify
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 from nltk.corpus.reader import CategorizedPlaintextCorpusReader
+import random
 
 bumble=CategorizedPlaintextCorpusReader('C:/Users/addym/AppData/Roaming/nltk_data/corpora/bumble',  \
                                  '.*', \
@@ -28,6 +19,7 @@ documents = []
 for category in bumble.categories():
 	for fileid in bumble.fileids(category):
 		documents.append((bumble.words(fileid), category))
+		
 
 all_words = [word.lower() for word in bumble.words()]
 
@@ -52,18 +44,44 @@ def document_features(document):
 	return features
 
 feature_set = [(document_features(doc), category) for (doc, category) in documents]
+random.shuffle(feature_set)
 
-train_set = feature_set[:]
+train_set = feature_set[400:]
+test_set = feature_set[:400]
 
 classifier = NaiveBayesClassifier.train(train_set)
 
 
-# in_file = open("C:/Users/addym/Desktop/Classes/CSCI642/Assignment4/Test data file.txt")
+#accuracy
+accuracy = classify.accuracy(classifier,test_set)
+print(accuracy)
 
-# test_review = in_file.read()
-# in_file.close()
+app_func=[]
+app_func=[0 for i in range(3)]
+cust_serv=[]
+cust_serv=[0 for i in range(3)]
+prod_sat=[]
+prod_sat=[0 for i in range(3)]
 
-test_rev = "Nobody will answer the phone"
-test_rev_tokens = word_tokenize(test_rev)
-test_rev_set = document_features(test_rev_tokens)
-print ("This movie review is: ",classifier.classify(test_rev_set))
+
+
+
+for document in test_set:
+	x,y=document
+	if y=="app_func":
+		i=0
+	elif y=="cust_serv":
+		i=1
+	elif y=="prod_sat":
+		i=2
+	this_class=classifier.classify(x)
+	if this_class=="app_func":
+		app_func[i]=app_func[i]+1
+	elif this_class=="cust_serv":
+		cust_serv[i]=cust_serv[i]+1
+	elif this_class=="prod_sat":
+		prod_sat[i]=prod_sat[i]+1
+
+print(app_func)
+print(cust_serv)
+print(prod_sat)
