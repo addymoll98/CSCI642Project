@@ -37,32 +37,82 @@ bumble=CategorizedPlaintextCorpusReader('C:/Users/addym/AppData/Roaming/nltk_dat
 
 print(bumble.categories())
 
-documents = []
+docs = []
 
 lemmatizer = WordNetLemmatizer()
 punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
 
+def accronym(word):
+	accronyms=[
+		('app','application'),
+		('bot','robot'),
+		('bots','robots'),
+		('vs','versus')
+	]
+	for acc in accronyms:
+		x,y=acc
+		if x==word:
+			return y
+	return ""
+
 for category in bumble.categories():
 	for fileid in bumble.fileids(category):
-		for word in bumble.words(fileid):
-			word=lemmatizer.lemmatize(word)
-		for word in bumble.words(fileid):
-			word=word.lower()
-		for word in bumble.words(fileid):
-			if word in punc:
-				fileid.replace(word,'')
 		if len(bumble.words(fileid)) > 9:
-			documents.append((bumble.words(fileid), category))
+			docs.append((bumble.words(fileid), category))
+			#documents.append((bumble.sents(fileid),category))
+
+documents=[]
+
+for doc in docs:
+	x,y=doc
+	documents.append((list(x),y))
+
+for i in range(len(documents)):
+	x,y=documents[i]
+	for j in range(len(x)):
+		word=x[j]
+		if word in punc:
+			word=''
+		word=remove_emoji(word)
+		word=word.lower()
+		word=lemmatizer.lemmatize(word)
+		if accronym(word)!='':
+			word=accronym(word)
+		x[j]=word
+	documents[i]=(x,y)
+
 
 
 
 stopwords_english = stopwords.words('english')
+print(stopwords_english)
 
-for document in documents:
-	for word in document:
+# for document in documents:
+# 	for word in document:
+# 		if word in stopwords_english:
+# 			document.remove(word)
+# 		if word=='':
+# 			document.remove(word)
+
+cleaned_docs=[]
+
+for i in range(len(documents)):
+	x,y=documents[i]
+	for word in x:
 		if word in stopwords_english:
-			document.remove(word)
+			x.remove(word)
+			if i==0:
+				print("removed ", word)
+		if word=='':
+			x.remove(word)
+	documents[i]=(x,y)
+	if i==0:
+		print("printing x", x)
 
+
+
+print(documents[0])
+print(documents[300])
 
 all_words_clean=[]
 for document in documents:
@@ -135,6 +185,26 @@ target_names=['app_func', 'cust_serv', 'prod_sat']
 
 print(classification_report(y_true,y_pred,target_names=target_names))
 
+###########ALL this stuff below is trying to figure stuff out kinda stuff...
+
+# X,y=make_classification(n_samples=1000, n_features=1, n_informative=0, n_redundant=0, n_repeated=0, n_classes=3)
+
+# from sklearn.model_selection import train_test_split
+
+
+# for document in feature_set:
+# 	xd,yd=document
+# 	X.append()
+
+# X_train, X_test, y_train,y_test=train_test_split(X, y, test_size=.4)
+
+# from sklearn.svm import SVC
+# from sklearn.metrics import accuracy_score
+
+# clf=SVC(gamma='auto')
+# clf.fit(X_train,y_train)
+# y_pred=clf.predict(X_test)
+# print(accuracy_score(y_test,y_pred))
 
 
 
