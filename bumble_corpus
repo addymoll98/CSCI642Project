@@ -87,27 +87,23 @@ for i in range(len(documents)):
 stopwords_english = stopwords.words('english')
 print(stopwords_english)
 
-# for document in documents:
-# 	for word in document:
-# 		if word in stopwords_english:
-# 			document.remove(word)
-# 		if word=='':
-# 			document.remove(word)
 
 cleaned_docs=[]
 
 for i in range(len(documents)):
 	x,y=documents[i]
+	z=[]
 	for word in x:
-		if word in stopwords_english:
-			x.remove(word)
-			if i==0:
-				print("removed ", word)
-		if word=='':
-			x.remove(word)
-	documents[i]=(x,y)
+		if word not in stopwords_english and word!='':
+			z.append(word)
+			# x.remove(word)
+		# 	if i==0:
+		# 		print("removed ", word)
+		# if word=='':
+		# 	x.remove(word)
+	documents[i]=(z,y)
 	if i==0:
-		print("printing x", x)
+		print("printing z", z)
 
 
 
