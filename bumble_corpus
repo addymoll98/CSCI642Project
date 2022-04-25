@@ -53,7 +53,7 @@ def accronym(word):
 		x,y=acc
 		if x==word:
 			return y
-	return ""
+	return word
 
 for category in bumble.categories():
 	for fileid in bumble.fileids(category):
@@ -76,8 +76,7 @@ for i in range(len(documents)):
 		word=remove_emoji(word)
 		word=word.lower()
 		word=lemmatizer.lemmatize(word)
-		if accronym(word)!='':
-			word=accronym(word)
+		word=accronym(word)
 		x[j]=word
 	documents[i]=(x,y)
 
@@ -85,7 +84,7 @@ for i in range(len(documents)):
 
 
 stopwords_english = stopwords.words('english')
-print(stopwords_english)
+# print(stopwords_english)
 
 
 cleaned_docs=[]
@@ -102,13 +101,13 @@ for i in range(len(documents)):
 		# if word=='':
 		# 	x.remove(word)
 	documents[i]=(z,y)
-	if i==0:
-		print("printing z", z)
+	# if i==0:
+	# 	print("printing z", z)
 
 
 
-print(documents[0])
-print(documents[300])
+# print(documents[0])
+# print(documents[300])
 
 all_words_clean=[]
 for document in documents:
@@ -138,8 +137,8 @@ test_set = feature_set[:400]
 NBclassifier = NaiveBayesClassifier.train(train_set)
 
 #accuracy
-accuracy = classify.accuracy(NBclassifier,test_set)
-print(accuracy)
+# accuracy = classify.accuracy(NBclassifier,test_set)
+# print(accuracy)
 
 app_func=[]
 app_func=[0 for i in range(3)]
@@ -174,25 +173,15 @@ for document in test_set:
 		prod_sat[i]=prod_sat[i]+1
 		y_pred.append(2)
 
-print(app_func)
-print(cust_serv)
-print(prod_sat)
+# print(app_func)
+# print(cust_serv)
+# print(prod_sat)
 target_names=['app_func', 'cust_serv', 'prod_sat']
 
 print(classification_report(y_true,y_pred,target_names=target_names))
 
 ###########ALL this stuff below is trying to figure stuff out kinda stuff...
 
-# X,y=make_classification(n_samples=1000, n_features=1, n_informative=0, n_redundant=0, n_repeated=0, n_classes=3)
-
-# from sklearn.model_selection import train_test_split
-
-
-# for document in feature_set:
-# 	xd,yd=document
-# 	X.append()
-
-# X_train, X_test, y_train,y_test=train_test_split(X, y, test_size=.4)
 
 # from sklearn.svm import SVC
 # from sklearn.metrics import accuracy_score
@@ -202,6 +191,47 @@ print(classification_report(y_true,y_pred,target_names=target_names))
 # y_pred=clf.predict(X_test)
 # print(accuracy_score(y_test,y_pred))
 
+from nltk.classify.scikitlearn import SklearnClassifier
+from sklearn.svm import SVC
+from sklearn import model_selection
+
+from sklearn.tree import DecisionTreeClassifier # Import Decision Tree Classifier
+from sklearn.model_selection import train_test_split # Import train_test_split function
+from sklearn import metrics #Import scikit-learn metrics module for accuracy calculation
+
+#SVC model training and accuracy
+model_svc = SklearnClassifier(SVC(kernel = 'linear'))
+model_svc.train(train_set)
+
+
+svc_accuracy = nltk.classify.accuracy(model_svc, test_set)
+print('SVC Accuracy : ',svc_accuracy)
+print()
+
+y_true=[]
+y_pred=[]
+for document in test_set:
+	x,y=document
+	if y=="app_func":
+		i=0
+		y_true.append(0)
+	elif y=="cust_serv":
+		i=1
+		y_true.append(1)
+	elif y=="prod_sat":
+		i=2
+		y_true.append(2)
+	this_class=model_svc.classify(x)
+	if this_class=="app_func":
+		app_func[i]=app_func[i]+1
+		y_pred.append(0)
+	elif this_class=="cust_serv":
+		cust_serv[i]=cust_serv[i]+1
+		y_pred.append(1)
+	elif this_class=="prod_sat":
+		prod_sat[i]=prod_sat[i]+1
+		y_pred.append(2)
+print(classification_report(y_true,y_pred,target_names=target_names))
 
 
 ###All this is balancing the data
@@ -240,8 +270,8 @@ balanced_test_set = balanced_feature_set[:400]
 NBclassifier = NaiveBayesClassifier.train(balanced_train_set)
 
 #accuracy
-accuracy = classify.accuracy(NBclassifier,balanced_test_set)
-print(accuracy)
+# accuracy = classify.accuracy(NBclassifier,balanced_test_set)
+# print(accuracy)
 
 app_func=[]
 app_func=[0 for i in range(3)]
@@ -276,9 +306,44 @@ for document in balanced_test_set:
 		prod_sat[i]=prod_sat[i]+1
 		y_pred.append(2)
 
-print(app_func)
-print(cust_serv)
-print(prod_sat)
+# print(app_func)
+# print(cust_serv)
+# print(prod_sat)
 target_names=['app_func', 'cust_serv', 'prod_sat']
 
+print(classification_report(y_true,y_pred,target_names=target_names))
+
+
+###########################
+model_svcBAL = SklearnClassifier(SVC(kernel = 'linear'))
+model_svcBAL.train(balanced_train_set)
+
+
+svc_accuracy = nltk.classify.accuracy(model_svc, balanced_test_set)
+print('Balanced SVC Accuracy : ',svc_accuracy)
+print()
+
+y_true=[]
+y_pred=[]
+for document in balanced_test_set:
+	x,y=document
+	if y=="app_func":
+		i=0
+		y_true.append(0)
+	elif y=="cust_serv":
+		i=1
+		y_true.append(1)
+	elif y=="prod_sat":
+		i=2
+		y_true.append(2)
+	this_class=model_svc.classify(x)
+	if this_class=="app_func":
+		app_func[i]=app_func[i]+1
+		y_pred.append(0)
+	elif this_class=="cust_serv":
+		cust_serv[i]=cust_serv[i]+1
+		y_pred.append(1)
+	elif this_class=="prod_sat":
+		prod_sat[i]=prod_sat[i]+1
+		y_pred.append(2)
 print(classification_report(y_true,y_pred,target_names=target_names))
