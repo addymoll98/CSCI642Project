@@ -31,11 +31,11 @@ def remove_punc(text):
 			text = text.replace(ele, "")
 	return text
 
-bumble=CategorizedPlaintextCorpusReader('C:/Users/addym/AppData/Roaming/nltk_data/corpora/bumble',  \
+bumble=CategorizedPlaintextCorpusReader('/Users/sohaibkhan/nltk_data/corpora/bumble',  \
                                  '.*', \
                                  cat_pattern=r'(.*)[/]')
 
-print(bumble.categories())
+#print(bumble.categories())
 
 docs = []
 
@@ -85,7 +85,7 @@ for i in range(len(documents)):
 
 
 stopwords_english = stopwords.words('english')
-print(stopwords_english)
+#print(stopwords_english)
 
 
 cleaned_docs=[]
@@ -107,8 +107,8 @@ for i in range(len(documents)):
 
 
 
-print(documents[0])
-print(documents[300])
+# print(documents[0])
+# print(documents[300])
 
 all_words_clean=[]
 for document in documents:
@@ -131,6 +131,8 @@ def document_features(document):
 
 feature_set = [(document_features(doc), category) for (doc, category) in documents]
 random.shuffle(feature_set)
+
+#print(feature_set[0][0])
 
 train_set = feature_set[400:]
 test_set = feature_set[:400]
@@ -202,7 +204,42 @@ print(classification_report(y_true,y_pred,target_names=target_names))
 # y_pred=clf.predict(X_test)
 # print(accuracy_score(y_test,y_pred))
 
+from nltk.classify.scikitlearn import SklearnClassifier
+from sklearn.svm import SVC
+from sklearn import model_selection
 
+from sklearn.tree import DecisionTreeClassifier # Import Decision Tree Classifier
+from sklearn.model_selection import train_test_split # Import train_test_split function
+from sklearn import metrics #Import scikit-learn metrics module for accuracy calculation
+
+#SVC model training and accuracy
+model_svc = SklearnClassifier(SVC(kernel = 'linear'))
+model_svc.train(train_set)
+
+
+svc_accuracy = nltk.classify.accuracy(model_svc, test_set)
+print('SVC Accuracy : ',svc_accuracy)
+print()
+
+
+#Decision Tree model training and accuracy
+
+
+# model_tree = SklearnClassifier(DecisionTreeClassifier(kernel = 'linear'))
+# model_tree.train(train_set)
+# tree_accuracy = nltk.classify.accuracy(model_tree, test_set)
+
+# Create Decision Tree classifer object
+# clf = DecisionTreeClassifier()
+
+# # Train Decision Tree Classifer
+# clf = clf.fit(train_set)
+
+# #Predict the response for test dataset
+# y_pred = clf.predict(test_set)
+
+# tree_accuracy = metrics.accuracy_score(train_set, y_pred)
+# print('Decision tree accuracy: ')
 
 ###All this is balancing the data
 
