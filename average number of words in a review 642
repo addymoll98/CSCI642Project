@@ -1,0 +1,18 @@
+#the code for the average number of words in a review
+
+lenOfWords = 0
+numOfReviews = 0
+
+for category in bumble.categories():
+	for fileid in bumble.fileids(category):
+		if len(bumble.words(fileid)) > 9:
+			docs.append((bumble.words(fileid), category))
+			lenOfWords = lenOfWords + (len(bumble.words(fileid)))
+			numOfReviews = numOfReviews + 1
+			#documents.append((bumble.sents(fileid),category))
+
+
+avgWords = int(lenOfWords / numOfReviews)
+
+print("The average number of words in a review: ", avgWords)
+print()
