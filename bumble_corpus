@@ -1,15 +1,11 @@
 from math import prod
-import os, os.path
-import string
-import nltk, string, re
-from nltk import FreqDist, NaiveBayesClassifier, classify
-from nltk.tokenize import word_tokenize
+import os.path
+import nltk, re
+from nltk import FreqDist, NaiveBayesClassifier
 from nltk.corpus import stopwords
 from nltk.corpus.reader import CategorizedPlaintextCorpusReader
 import random
 from sklearn.metrics import classification_report
-from sklearn.ensemble import RandomForestClassifier
-from sklearn.datasets import make_classification
 from nltk.stem import WordNetLemmatizer
 
 def remove_emoji(text):
@@ -35,21 +31,23 @@ bumble=CategorizedPlaintextCorpusReader('C:/Users/addym/AppData/Roaming/nltk_dat
                                  '.*', \
                                  cat_pattern=r'(.*)[/]')
 
-print(bumble.categories())
-
 docs = []
 
 lemmatizer = WordNetLemmatizer()
 punc = '''!()-[]{};:'"\,<>./?@#$%^&*_~'''
 
 def accronym(word):
-	accronyms=[
+	abbreviations=[
 		('app','application'),
 		('bot','robot'),
 		('bots','robots'),
-		('vs','versus')
+		('vs','versus'),
+		('cuz', 'because'),
+		('ads', 'advertisements'),
+		('ad', 'advertisement'),
+		('bio','biography')
 	]
-	for acc in accronyms:
+	for acc in abbreviations:
 		x,y=acc
 		if x==word:
 			return y
@@ -59,14 +57,14 @@ for category in bumble.categories():
 	for fileid in bumble.fileids(category):
 		if len(bumble.words(fileid)) > 9:
 			docs.append((bumble.words(fileid), category))
-			#documents.append((bumble.sents(fileid),category))
 
+#create documents as a list of pairs
 documents=[]
-
 for doc in docs:
 	x,y=doc
 	documents.append((list(x),y))
 
+#Remove punctuations, emojies, lemmatization, replace accronyms
 for i in range(len(documents)):
 	x,y=documents[i]
 	for j in range(len(x)):
@@ -80,13 +78,8 @@ for i in range(len(documents)):
 		x[j]=word
 	documents[i]=(x,y)
 
-
-
-
+#Remove Stopwords
 stopwords_english = stopwords.words('english')
-# print(stopwords_english)
-
-
 cleaned_docs=[]
 
 for i in range(len(documents)):
@@ -95,32 +88,21 @@ for i in range(len(documents)):
 	for word in x:
 		if word not in stopwords_english and word!='':
 			z.append(word)
-			# x.remove(word)
-		# 	if i==0:
-		# 		print("removed ", word)
-		# if word=='':
-		# 	x.remove(word)
 	documents[i]=(z,y)
-	# if i==0:
-	# 	print("printing z", z)
 
-
-
-# print(documents[0])
-# print(documents[300])
-
+#create a list of all words
 all_words_clean=[]
 for document in documents:
 	docx,docy=document
 	for word in docx:
 		all_words_clean.append(word)
 
+#Most common 2000 words
 all_words_frequency = FreqDist(all_words_clean)
-
 most_common_words = all_words_frequency.most_common(2000)
-
 word_features = [item[0] for item in most_common_words]
 
+#create feature set
 def document_features(document):
 	document_words = set(document)
 	features = {}
@@ -129,24 +111,22 @@ def document_features(document):
 	return features
 
 feature_set = [(document_features(doc), category) for (doc, category) in documents]
-random.shuffle(feature_set)
 
+#randomly select the train and test sets 60% train, 40% test
+random.shuffle(feature_set)
 train_set = feature_set[400:]
 test_set = feature_set[:400]
 
+################ Naive Bayes Classifier ################
 NBclassifier = NaiveBayesClassifier.train(train_set)
 
-#accuracy
-# accuracy = classify.accuracy(NBclassifier,test_set)
-# print(accuracy)
-
+#build the confusion matrix
 app_func=[]
 app_func=[0 for i in range(3)]
 cust_serv=[]
 cust_serv=[0 for i in range(3)]
 prod_sat=[]
 prod_sat=[0 for i in range(3)]
-
 
 y_true=[]
 y_pred=[]
@@ -173,40 +153,20 @@ for document in test_set:
 		prod_sat[i]=prod_sat[i]+1
 		y_pred.append(2)
 
-# print(app_func)
-# print(cust_serv)
-# print(prod_sat)
 target_names=['app_func', 'cust_serv', 'prod_sat']
-
+print()
+print('Imbalanced NBC')
+print()
 print(classification_report(y_true,y_pred,target_names=target_names))
 
-###########ALL this stuff below is trying to figure stuff out kinda stuff...
 
-
-# from sklearn.svm import SVC
-# from sklearn.metrics import accuracy_score
-
-# clf=SVC(gamma='auto')
-# clf.fit(X_train,y_train)
-# y_pred=clf.predict(X_test)
-# print(accuracy_score(y_test,y_pred))
-
+################ Support Vector Classifier ################
 from nltk.classify.scikitlearn import SklearnClassifier
 from sklearn.svm import SVC
-from sklearn import model_selection
-
-from sklearn.tree import DecisionTreeClassifier # Import Decision Tree Classifier
-from sklearn.model_selection import train_test_split # Import train_test_split function
-from sklearn import metrics #Import scikit-learn metrics module for accuracy calculation
 
 #SVC model training and accuracy
 model_svc = SklearnClassifier(SVC(kernel = 'linear'))
 model_svc.train(train_set)
-
-
-svc_accuracy = nltk.classify.accuracy(model_svc, test_set)
-print('SVC Accuracy : ',svc_accuracy)
-print()
 
 y_true=[]
 y_pred=[]
@@ -231,11 +191,13 @@ for document in test_set:
 	elif this_class=="prod_sat":
 		prod_sat[i]=prod_sat[i]+1
 		y_pred.append(2)
+
+print()
+print('Imbalanced SVC')
+print()
 print(classification_report(y_true,y_pred,target_names=target_names))
 
-
-###All this is balancing the data
-
+################ Balancing Data ################
 balanced_feature_set=feature_set
 
 app_func=0
@@ -257,21 +219,18 @@ while app_func < prod_sat and cust_serv<prod_sat:
 			if app_func < prod_sat:
 				balanced_feature_set.append((x,y))
 				app_func+=1
-		elif y=="cust_serv":
-			if cust_serv < prod_sat:
-				balanced_feature_set.append((x,y))
-				cust_serv+=1
+		elif y=="cust_serv" and cust_serv < prod_sat:
+			#if cust_serv < prod_sat:
+			balanced_feature_set.append((x,y))
+			cust_serv+=1
 
+#Shuffle and randomly select 400 from the balanced feature set to test, rest train
 random.shuffle(balanced_feature_set)
-
 balanced_train_set = balanced_feature_set[400:]
 balanced_test_set = balanced_feature_set[:400]
 
+################ Naive Bayes Classifier, Balanced ################
 NBclassifier = NaiveBayesClassifier.train(balanced_train_set)
-
-#accuracy
-# accuracy = classify.accuracy(NBclassifier,balanced_test_set)
-# print(accuracy)
 
 app_func=[]
 app_func=[0 for i in range(3)]
@@ -279,7 +238,6 @@ cust_serv=[]
 cust_serv=[0 for i in range(3)]
 prod_sat=[]
 prod_sat=[0 for i in range(3)]
-
 
 y_true=[]
 y_pred=[]
@@ -306,22 +264,14 @@ for document in balanced_test_set:
 		prod_sat[i]=prod_sat[i]+1
 		y_pred.append(2)
 
-# print(app_func)
-# print(cust_serv)
-# print(prod_sat)
-target_names=['app_func', 'cust_serv', 'prod_sat']
-
+print()
+print('Balanced NBC')
+print()
 print(classification_report(y_true,y_pred,target_names=target_names))
 
-
-###########################
+################ Support Vector Classifier, Balanced ################
 model_svcBAL = SklearnClassifier(SVC(kernel = 'linear'))
 model_svcBAL.train(balanced_train_set)
-
-
-svc_accuracy = nltk.classify.accuracy(model_svc, balanced_test_set)
-print('Balanced SVC Accuracy : ',svc_accuracy)
-print()
 
 y_true=[]
 y_pred=[]
@@ -346,4 +296,8 @@ for document in balanced_test_set:
 	elif this_class=="prod_sat":
 		prod_sat[i]=prod_sat[i]+1
 		y_pred.append(2)
+
+print()
+print('Balanced SVC')
+print()
 print(classification_report(y_true,y_pred,target_names=target_names))
